@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Flappy Bird AI</title>
+        <script>
+// Neural networks
+class Layer {
+    constructor(inputs, outputs, parameters) {
+        if (parameters.length !== inputs * outputs + outputs) {
+            throw Error("Wrong number of parameters");
+        }
+        this.parameters = parameters
+        this.inputs = inputs
+        this.outputs = outputs
+    }
+    static random(inputs, outputs) {
+        let layer = new Layer(
+            inputs, outputs,
+            new Array(inputs * outputs + outputs).fill(0)
+        );
+        for (let i = 0; i < layer.parameters.length; i++) {
+            layer.parameters[i] = Math.random()*8 - 4;
+        }
+        return layer
+    }
+    get_weight_index(input, output) {
+        return this.inputs * output + input;
+    }
+    get_bias_index(output) {
+        return this.inputs * this.outputs + output;
+    }
+    propagate(inputs) {
+        let outputs = new Array(this.outputs).fill(0);
+        for (let output = 0; output < this.outputs; output++) {
+            for (let input = 0; input < this.inputs; input++) {
+                outputs[output] += inputs[input] * this.parameters[this.get_weight_index(input, output)];
+            }
+            outputs[output] += this.parameters[this.get_bias_index(output)];
+            if (outputs[output] < 0) {
+                outputs[output] *= 0.25;
+            }
+        }
+        return outputs;
+    }
+    mutate() {
+        let mutated = new Layer(
+            this.inputs, this.outputs,
+            new Array(this.inputs * this.outputs + this.outputs).fill(0)
+        );
+        for (let i = 0; i < this.parameters.length; i++) {
+            mutated.parameters[i] = this.parameters[i] + 0;
+            if (Math.random() > 0.95) {
+                mutated.parameters[i] = Math.random()*8-4;
+            }
+        }
+        return mutated;
+    }
+}
+class Network {
+    constructor(layers) {
+        this.layers = layers;
+    }
+    static random(sizes) {
+        let layers = [];
+        for (let i = 0; i < sizes.length - 1; i++) {
+            layers.push(Layer.random(sizes[i], sizes[i+1]));
+        }
+        return new Network(layers);
+    }
+    propagate(inputs) {
+        let data = inputs;
+        for (let i = 0; i < this.layers.length; i++) {
+            data = this.layers[i].propagate(data);
+        }
+        return data;
+    }
+    mutate() {
+        let layers = [];
+        for (let i = 0; i < this.layers.length; i++) {
+            layers.push(this.layers[i].mutate());
+        }
+        return new Network(layers);
+    }
+}
+        </script>
+    </head>
+    <body>
+        <h3 style="font-family: Courier New;" id="generation">Generation 1</h3>
+        <canvas id="canvas"></canvas>
+        <script>
+// Define some stuff
+class Bird {
+    constructor(network) {
+        this.network = network;
+        this.going = true;
+        this.y = 200;
+        this.vy = 0;
+    }
+    mutate() {
+        return new Bird(this.network.mutate());
+    }
+    simulate() {
+        if (!this.going) return;
+        // Run the brain
+        const inputs = [
+            // Distance to next pipe's end
+            1 - x / 200,
+            // Vertical distance to next pipe
+            (pipes[0] - this.y)/400
+        ];
+        const jump = this.network.propagate(inputs)[0] > 0;
+        // Run physics
+        this.vy += 0.75;
+        if (jump) this.vy = -10;
+        this.y += this.vy;
+        // Check for collisions
+        if (x > 150) {
+            if (this.y < pipes[0] - 50 || this.y > pipes[0] + 50) {
+                this.going = false;
+            }
+        }
+        if (this.y > 400) {
+            this.going = false;
+        }
+        if (this.y < -50) {
+            this.going = false;
+        }
+    }
+    draw() {
+        if (this.going) {
+            ctx.fillStyle = "red";
+            ctx.fillRect(0, this.y - 5, 5, 10);
+        }
+    }
+    tick() {
+        this.simulate();
+        this.draw();
+    }
+    static random() {
+        return new Bird(Network.random([2, 4, 4, 1]));
+    }
+}
+function count_birds() {
+    let count = 0;
+    for (let i = 0; i < bird_count; i++) {
+        if (birds[i].going) count++;
+    }
+    return count;
+}
+// Setup
+let generation = 1;
+const bird_count = 200;
+const canvas = document.querySelector("#canvas");
+canvas.width = 400;
+canvas.height = 400;
+let ctx = canvas.getContext("2d");
+let x = 0; // Wraps around at 200
+let pipes = [];
+let birds = [];
+for (let i = 0; i < bird_count; i++) {
+    birds.push(Bird.random());
+}
+// Draw
+window.setInterval(() => {
+    if (pipes.length < 10) {
+        pipes.push(Math.random() * 300 + 50);
+    }
+    x += 2;
+    if (x > 200) {
+        pipes.shift();
+        x -= 200;
+    }
+    ctx.fillStyle = "lightblue";
+    ctx.fillRect(0, 0, 400, 400);
+    ctx.fillStyle = "green";
+    for (let i = 0; i < pipes.length; i++) {
+        ctx.fillRect(200 * i + 150 - x, 0, 50, pipes[i] - 50);
+        ctx.fillRect(200 * i + 150 - x, pipes[i] + 50, 50, 375 - pipes[i]);
+    }
+    for (let i = 0; i < bird_count; i++) {
+        birds[i].tick();
+    }
+    const birds_left = count_birds();
+    if (birds_left <= 2) {
+        generation++;
+        document.querySelector("#generation").innerHTML = "Generation " + generation;
+        if (birds_left > 0) {
+            birds = birds.filter(bird => bird.going);
+            for (let i = 0; i < (bird_count - birds_left)/birds_left; i++) {
+                for (let j = 0; j < birds_left; j++) {
+                    birds.push(birds[j].mutate());
+                }
+            }
+            for (let i = 0; i < bird_count; i++) {
+                birds[i].y = 200;
+                birds[i].vy = 0;
+            }
+            pipes = [];
+            x = 0;
+        } else {
+            // zero left, reset with the same birds
+            pipes = [];
+            x = 0;
+            // Make sure the birds are set to going again
+            for (let i = 0; i < bird_count; i++) {
+                birds[i].going = true;
+                birds[i].y = 200;
+                birds[i].vy = 0;
+            }
+        }
+    }
+}, 33);
+        </script>
+    </body>
+</html>
