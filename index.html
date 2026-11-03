@@ -55,6 +55,25 @@ class Layer {
         }
         return mutated;
     }
+    tiny_mutate() {
+        let mutated = new Layer(
+            this.inputs, this.outputs,
+            new Array(this.inputs * this.outputs + this.outputs).fill(0)
+        );
+        for (let i = 0; i < this.parameters.length; i++) {
+            mutated.parameters[i] = this.parameters[i] + Math.random() * 0.1 - 0.05;
+        }
+        return mutated;
+    }
+    serialize() {
+        return [this.inputs, this.outputs].concat(this.parameters);
+    }
+    static load(data) {
+        const d = data;
+        const inputs = d.shift();
+        const outputs = d.shift();
+        return new Layer(inputs, outputs, d);
+    }
 }
 class Network {
     constructor(layers) {
@@ -81,14 +100,50 @@ class Network {
         }
         return new Network(layers);
     }
+    tiny_mutate() {
+        let layers = [];
+        for (let i = 0; i < this.layers.length; i++) {
+            layers.push(this.layers[i].tiny_mutate());
+        }
+        return new Network(layers);
+    }
+    serialize() {
+        let layers = [];
+        for (let i = 0; i < this.layers.length; i++) {
+            layers.push(this.layers[i].serialize());
+        }
+        return JSON.stringify(layers);
+    }
+    static load(data) {
+        const data_layers = JSON.parse(data);
+        let loaded_layers = [];
+        for (let i = 0; i < data_layers.length; i++) {
+            loaded_layers.push(Layer.load(data_layers[i]));
+        }
+        return new Network(loaded_layers);
+    }
 }
         </script>
     </head>
     <body>
         <h3 style="font-family: Courier New;" id="generation">Generation 1</h3>
-        <canvas id="canvas"></canvas>
+        <canvas id="canvas"></canvas><br/>
+        <button onclick="load_model()">Load a model</button>
+        <button onclick="save_model()">Save current best model</button>
         <script>
 // Define some stuff
+function load_model() {
+    const code = window.prompt("Paste your save code", "");
+    birds = [Bird.load(code)];
+    for (let i = 1; i < bird_count; i++) {
+        birds.push(birds[0].tiny_mutate());
+    }
+    x = 0;
+    pipes = [];
+}
+function save_model() {
+    window.prompt("Here is your save code. Copy it.", best.serialize());
+}
 class Bird {
     constructor(network) {
         this.network = network;
@@ -99,6 +154,9 @@ class Bird {
     mutate() {
         return new Bird(this.network.mutate());
     }
+    tiny_mutate() {
+        return new Bird(this.network.tiny_mutate());
+    }
     simulate() {
         if (!this.going) return;
         // Run the brain
@@ -106,7 +164,9 @@ class Bird {
             // Distance to next pipe's end
             1 - x / 200,
             // Vertical distance to next pipe
-            (pipes[0] - this.y)/400
+            (pipes[0] - this.y)/400,
+            // Velocity on the y axis
+            this.vy / 100
         ];
         const jump = this.network.propagate(inputs)[0] > 0;
         // Run physics
@@ -137,7 +197,13 @@ class Bird {
         this.draw();
     }
     static random() {
-        return new Bird(Network.random([2, 4, 4, 1]));
+        return new Bird(Network.random([3, 4, 4, 1]));
+    }
+    serialize() {
+        return this.network.serialize();
+    }
+    static load(data) {
+        return new Bird(Network.load(data));
     }
 }
 function count_birds() {
@@ -160,6 +226,7 @@ let birds = [];
 for (let i = 0; i < bird_count; i++) {
     birds.push(Bird.random());
 }
+let best = birds[0];
 // Draw
 window.setInterval(() => {
     if (pipes.length < 10) {
@@ -197,6 +264,7 @@ window.setInterval(() => {
             }
             pipes = [];
             x = 0;
+            best = birds[0];
         } else {
             // zero left, reset with the same birds
             pipes = [];
