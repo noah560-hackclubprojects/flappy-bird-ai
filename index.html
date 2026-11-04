@@ -168,7 +168,7 @@ class Bird {
         // Run the brain
         const inputs = [
             // Distance to next pipe's end
-            1 - x / 200,
+            1 - x / 300,
             // Vertical distance to next pipe
             (pipes[0] - this.y)/400,
             // Velocity on the y axis
@@ -180,7 +180,7 @@ class Bird {
         if (jump) this.vy = -10;
         this.y += this.vy;
         // Check for collisions
-        if (x > 150) {
+        if (x > 250) {
             if (this.y < pipes[0] - 50 || this.y > pipes[0] + 50) {
                 this.going = false;
             }
@@ -255,7 +255,7 @@ const canvas = document.querySelector("#canvas");
 canvas.width = 400;
 canvas.height = 400;
 let ctx = canvas.getContext("2d");
-let x = 0; // Wraps around at 200
+let x = 0; // Wraps around at 300
 let pipes = [];
 let birds = [];
 for (let i = 0; i < bird_count; i++) {
@@ -268,9 +268,9 @@ window.setInterval(() => {
             pipes.push(Math.random() * 300 + 50);
         }
         x += 2;
-        if (x > 200) {
+        if (x > 300) {
             pipes.shift();
-            x -= 200;
+            x -= 300;
         }
         for (let i = 0; i < bird_count; i++) {
             birds[i].simulate();
@@ -280,8 +280,8 @@ window.setInterval(() => {
     ctx.fillRect(0, 0, 400, 400);
     ctx.fillStyle = "green";
     for (let i = 0; i < pipes.length; i++) {
-        ctx.fillRect(200 * i + 150 - x, 0, 50, pipes[i] - 50);
-        ctx.fillRect(200 * i + 150 - x, pipes[i] + 50, 50, 375 - pipes[i]);
+        ctx.fillRect(300 * i + 250 - x, 0, 50, pipes[i] - 50);
+        ctx.fillRect(300 * i + 250 - x, pipes[i] + 50, 50, 375 - pipes[i]);
     }
     for (let i = 0; i < bird_count; i++) {
         birds[i].draw();
