@@ -223,12 +223,18 @@ function count_birds() {
     return count;
 }
 function get_best() {
+    let candidates = [];
     for (let i = 0; i < birds.length; i++) {
         if (birds[i].going) {
-            return i;
+            candidates.push(i);
         }
     }
-    return 0;
+    if (candidates.length === 0) {
+        return 0;
+    }
+    // Otherwise we need to sort them
+    candidates.sort((a, b) => birds[a].cost - birds[b].cost);
+    return candidates[0];
 }
 window.addEventListener("keydown", event => {
     if (event.key - 0 == event.key) {
