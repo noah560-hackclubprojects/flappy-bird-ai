@@ -181,7 +181,7 @@ class Bird {
         this.y += this.vy;
         // Check for collisions
         if (x > 250) {
-            if (this.y < pipes[0] - 50 || this.y > pipes[0] + 50) {
+            if (this.y < pipes[0] - pipe_size || this.y > pipes[0] + pipe_size) {
                 this.going = false;
             }
             this.cost += Math.abs(pipes[0] - this.y);
@@ -246,6 +246,7 @@ window.addEventListener("keydown", event => {
     }
 });
 // Setup
+let pipe_size = 50;
 let generation = 1;
 let sim_speed = 1;
 const threshold = 25;
@@ -264,6 +265,7 @@ for (let i = 0; i < bird_count; i++) {
 // Draw
 window.setInterval(() => {
     for (let j = 0; j < sim_speed; j++) {
+        pipe_size *= 0.998;
         if (pipes.length < 10) {
             pipes.push(Math.random() * 300 + 50);
         }
@@ -280,8 +282,8 @@ window.setInterval(() => {
     ctx.fillRect(0, 0, 400, 400);
     ctx.fillStyle = "green";
     for (let i = 0; i < pipes.length; i++) {
-        ctx.fillRect(300 * i + 250 - x, 0, 50, pipes[i] - 50);
-        ctx.fillRect(300 * i + 250 - x, pipes[i] + 50, 50, 375 - pipes[i]);
+        ctx.fillRect(300 * i + 250 - x, 0, 50, pipes[i] - pipe_size);
+        ctx.fillRect(300 * i + 250 - x, pipes[i] + pipe_size, 50, 375 - pipes[i]);
     }
     for (let i = 0; i < bird_count; i++) {
         birds[i].draw();
