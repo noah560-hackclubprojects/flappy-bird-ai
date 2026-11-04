@@ -218,6 +218,11 @@ function count_birds() {
     }
     return count;
 }
+window.addEventListener("keydown", event => {
+    if (event.key - 0 == event.key) {
+        sim_speed = event.key - 0;
+    }
+});
 // Setup
 let generation = 1;
 let sim_speed = 1;
