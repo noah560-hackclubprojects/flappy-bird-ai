@@ -147,7 +147,7 @@ function load_model() {
     pipes = [];
 }
 function save_model() {
-    window.prompt("Here is your save code. Copy it.", best.serialize());
+    window.prompt("Here is your save code. Copy it.", birds[get_best()].serialize());
 }
 class Bird {
     constructor(network) {
@@ -218,6 +218,14 @@ function count_birds() {
     }
     return count;
 }
+function get_best() {
+    for (let i = 0; i < birds.length; i++) {
+        if (birds[i].going) {
+            return i;
+        }
+    }
+    return 0;
+}
 window.addEventListener("keydown", event => {
     if (event.key - 0 == event.key) {
         sim_speed = event.key - 0;
@@ -248,7 +256,6 @@ let birds = [];
 for (let i = 0; i < bird_count; i++) {
     birds.push(Bird.random());
 }
-let best = birds[0];
 // Draw
 window.setInterval(() => {
     for (let j = 0; j < sim_speed; j++) {
