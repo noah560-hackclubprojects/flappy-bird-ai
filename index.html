@@ -155,6 +155,7 @@ class Bird {
         this.going = true;
         this.y = 200;
         this.vy = 0;
+        this.cost = 0;
     }
     mutate() {
         return new Bird(this.network.mutate());
@@ -183,6 +184,9 @@ class Bird {
             if (this.y < pipes[0] - 50 || this.y > pipes[0] + 50) {
                 this.going = false;
             }
+            this.cost += Math.abs(pipes[0] - this.y);
+        } else {
+            this.cost += 0.1 * Math.abs(pipes[0] - this.y);
         }
         if (this.y > 400) {
             this.going = false;
@@ -244,7 +248,8 @@ window.addEventListener("keydown", event => {
 // Setup
 let generation = 1;
 let sim_speed = 1;
-const threshold = 50;
+const threshold = 100;
+const nextgen_size = 50;
 const bird_count = 200;
 const canvas = document.querySelector("#canvas");
 canvas.width = 400;
@@ -287,11 +292,13 @@ window.setInterval(() => {
         document.querySelector("#generation").innerHTML = "Generation " + generation;
         if (birds_left > 0) {
             birds = birds.filter(bird => bird.going);
+            birds.sort((a, b) => a.cost - b.cost);
+            birds = birds.slice(0, nextgen_size);
             let j = 0;
             while (birds.length < bird_count) {
                 birds.push(birds[j].mutate());
                 j++;
-                j = j % birds_left;
+                j = j % nextgen_size;
             }
             for (let i = 0; i < bird_count; i++) {
                 birds[i].y = 200;
