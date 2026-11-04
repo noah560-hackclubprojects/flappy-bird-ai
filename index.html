@@ -235,6 +235,7 @@ window.addEventListener("keydown", event => {
         sim_speed = event.key - 0;
     }
     if (event.key === "r") {
+        pipe_size = 50;
         pipes = [];
         generation = 1;
         x = 0;
@@ -265,7 +266,7 @@ for (let i = 0; i < bird_count; i++) {
 // Draw
 window.setInterval(() => {
     for (let j = 0; j < sim_speed; j++) {
-        pipe_size *= 0.998;
+        pipe_size *= 0.999;
         if (pipes.length < 10) {
             pipes.push(Math.random() * 300 + 50);
         }
@@ -306,12 +307,14 @@ window.setInterval(() => {
                 birds[i].y = 200;
                 birds[i].vy = 0;
             }
+            pipe_size = 50;
             pipes = [];
             x = 0;
             best = birds[0];
         } else {
             // zero left, reset with the same birds
             pipes = [];
+            pipe_size = 50;
             x = 0;
             // Make sure the birds are set to going again
             for (let i = 0; i < bird_count; i++) {
