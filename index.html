@@ -197,7 +197,6 @@ class Bird {
     }
     draw() {
         if (this.going) {
-            ctx.fillStyle = "red";
             ctx.fillRect(0, this.y - 5, 5, 10);
         }
     }
@@ -292,9 +291,12 @@ window.setInterval(() => {
         ctx.fillRect(300 * i + 250 - x, 0, 50, pipes[i] - pipe_size);
         ctx.fillRect(300 * i + 250 - x, pipes[i] + pipe_size, 50, 375 - pipes[i]);
     }
+    ctx.fillStyle = "red";
     for (let i = 0; i < bird_count; i++) {
         birds[i].draw();
     }
+    ctx.fillStyle = "darkgreen";
+    birds[get_best()].draw();
     const birds_left = count_birds();
     if (birds_left <= threshold) {
         generation++;
