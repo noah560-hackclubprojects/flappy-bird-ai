@@ -220,6 +220,7 @@ function count_birds() {
 }
 // Setup
 let generation = 1;
+let sim_speed = 1;
 const bird_count = 200;
 const canvas = document.querySelector("#canvas");
 canvas.width = 400;
@@ -234,13 +235,18 @@ for (let i = 0; i < bird_count; i++) {
 let best = birds[0];
 // Draw
 window.setInterval(() => {
-    if (pipes.length < 10) {
-        pipes.push(Math.random() * 300 + 50);
-    }
-    x += 2;
-    if (x > 200) {
-        pipes.shift();
-        x -= 200;
+    for (let j = 0; j < sim_speed; j++) {
+        if (pipes.length < 10) {
+            pipes.push(Math.random() * 300 + 50);
+        }
+        x += 2;
+        if (x > 200) {
+            pipes.shift();
+            x -= 200;
+        }
+        for (let i = 0; i < bird_count; i++) {
+            birds[i].simulate();
+        }
     }
     ctx.fillStyle = "lightblue";
     ctx.fillRect(0, 0, 400, 400);
@@ -250,7 +256,7 @@ window.setInterval(() => {
         ctx.fillRect(200 * i + 150 - x, pipes[i] + 50, 50, 375 - pipes[i]);
     }
     for (let i = 0; i < bird_count; i++) {
-        birds[i].tick();
+        birds[i].draw();
     }
     const birds_left = count_birds();
     if (birds_left <= 2) {
