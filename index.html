@@ -176,7 +176,7 @@ class Bird {
         ];
         const jump = this.network.propagate(inputs)[0] > 0;
         // Run physics
-        this.vy += 0.75;
+        this.vy += 0.5;
         if (jump) this.vy = -10;
         this.y += this.vy;
         // Check for collisions
