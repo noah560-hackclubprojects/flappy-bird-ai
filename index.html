@@ -122,6 +122,64 @@ class Network {
         }
         return new Network(loaded_layers);
     }
+    draw(data1) {
+        const layer_spacing = 400 / (this.layers.length + 2);
+        const start = 400 + layer_spacing;
+        const positions = [[]];
+        for (let i = 0; i < this.layers[0].inputs; i++) {
+            positions[0].push([start, 400 / (this.layers[0].inputs + 1) * (i + 1)]);
+        }
+        for (let i = 0; i < this.layers.length; i++) {
+            positions.push([]);
+            const node_spacing = 400 / (this.layers[i].outputs + 1);
+            for (let j = 0; j < this.layers[i].outputs; j++) {
+                positions[i+1].push([start + layer_spacing * (i+1), node_spacing * (j+1)]);
+            }
+        }
+        for (let i = 0; i < this.layers.length; i++) {
+            for (let a = 0; a < this.layers[i].inputs; a++) {
+                for (let b = 0; b < this.layers[i].outputs; b++) {
+                    const connection_id = this.layers[i].get_weight_index(a, b);
+                    ctx.strokeStyle = "rgb("
+                        + Math.max(-this.layers[i].parameters[connection_id] * 50, 0)
+                        + "," + Math.max(this.layers[i].parameters[connection_id] * 50, 0)
+                        + ",0)";
+                    ctx.beginPath();
+                    ctx.moveTo(positions[i][a][0], positions[i][a][1]);
+                    ctx.lineTo(positions[i+1][b][0], positions[i+1][b][1]);
+                    ctx.lineWidth = 8;
+                    ctx.stroke();
+                }
+            }
+        }
+        let data = data1;
+        for (let i = 0; i < this.layers[0].inputs; i++) {
+            ctx.strokeStyle = "rgb("
+                + Math.max(-data[i] * 100, 0)
+                + "," + Math.max(data[i] * 100, 0)
+                + ",0)";
+            ctx.fillStyle = "white";
+            ctx.lineWidth = 8;
+            ctx.fillRect(positions[0][i][0] - 10, positions[0][i][1] - 10, 20, 20);
+            ctx.strokeRect(positions[0][i][0] - 10, positions[0][i][1] - 10, 20, 20);
+        }
+        for (let i = 0; i < this.layers.length; i++) {
+            data = this.layers[i].propagate(data);
+            for (let j = 0; j < this.layers[i].outputs; j++) {
+                ctx.strokeStyle = "rgb("
+                    + Math.max(-data[j] * 50, 0)
+                    + "," + Math.max(data[j] * 50, 0)
+                    + ",0)";
+                ctx.fillStyle = "rgb("
+                    + Math.max(-this.layers[i].parameters[this.layers[i].get_bias_index(j)] * 50, 0)
+                    + "," + Math.max(this.layers[i].parameters[this.layers[i].get_bias_index(j)] * 50, 0)
+                    + ",0)";
+                ctx.lineWidth = 8;
+                ctx.fillRect(positions[i+1][j][0] - 10, positions[i+1][j][1] - 10, 20, 20);
+                ctx.strokeRect(positions[i+1][j][0] - 10, positions[i+1][j][1] - 10, 20, 20);
+            }
+        }
+    }
 }
         </script>
     </head>
@@ -213,6 +271,18 @@ class Bird {
     static load(data) {
         return new Bird(Network.load(data));
     }
+    draw_brain() {
+        ctx.fillStyle = "white";
+        ctx.fillRect(400, 0, 400, 400);
+        this.network.draw([
+            // Distance to next pipe's end
+            1 - x / 300,
+            // Vertical distance to next pipe
+            (pipes[0] - this.y)/400,
+            // Velocity on the y axis
+            this.vy / 100
+        ]);
+    }
 }
 function count_birds() {
     let count = 0;
@@ -262,7 +332,7 @@ const threshold = 25;
 const nextgen_size = 10;
 const bird_count = 200;
 const canvas = document.querySelector("#canvas");
-canvas.width = 400;
+canvas.width = 800;
 canvas.height = 400;
 let ctx = canvas.getContext("2d");
 let x = 0; // Wraps around at 300
@@ -299,7 +369,9 @@ window.setInterval(() => {
         birds[i].draw();
     }
     ctx.fillStyle = "darkgreen";
-    birds[get_best()].draw();
+    const best_id = get_best();
+    birds[best_id].draw();
+    birds[best_id].draw_brain();
     const birds_left = count_birds();
     if (birds_left <= threshold) {
         generation++;
@@ -317,6 +389,8 @@ window.setInterval(() => {
             for (let i = 0; i < bird_count; i++) {
                 birds[i].y = 200;
                 birds[i].vy = 0;
+                birds[i].cost = 0;
+                birds[i].going = true;
             }
             pipe_size = 50;
             pipes = [];
@@ -332,6 +406,7 @@ window.setInterval(() => {
                 birds[i].going = true;
                 birds[i].y = 200;
                 birds[i].vy = 0;
+                birds[i].cost = 0;
             }
         }
     }
